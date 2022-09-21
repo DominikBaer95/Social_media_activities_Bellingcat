@@ -1,0 +1,264 @@
+---
+title: "Plotting_Sentiments"
+author: "Manuel Totzauer"
+date: "13 7 2022"
+output: html_document
+---
+
+```{r}
+library(ggplot2)
+library(hrbrthemes)
+library(tidyverse)
+library(anytime)
+library(reshape2)
+```
+
+```{r}
+df_original_aggregated <- read.csv("../../DataSources/Dataset_Graphs/RQ1_Sentiment/sentiment_aggregated.csv")
+df_original_crosstab <- read.csv("../../DataSources/Dataset_Graphs/RQ1_Sentiment/conversations_sentiment.csv")
+df_original_top50 <- read.csv("../../DataSources/Dataset_Graphs/RQ1_Sentiment/top_50_sentiment.csv")
+before_after_replys <- read.csv("../../Bellingcat/DataSources/Dataset_Graphs/RQ3_SentimentxReplys/sentiment_replys.csv")
+df_conversations_avg <- read.csv("../../DataSources/Dataset_Graphs/RQ1_Sentiment/Avg_EngagementxSentiment.csv")
+df_conversations_avg_norm <- read.csv("../../DataSources/Dataset_Graphs/RQ1_Sentiment/Avg_normalized.csv")
+
+```
+
+```{r}
+#plotsize
+fig <- function(width, heigth){
+     options(repr.plot.width = width, repr.plot.height = heigth)
+}
+```
+
+
+```{r}
+#Absolute Distribution original Tweets -> df_original_aggregated
+df_original_aggregated
+                    
+```
+
+```{r}
+df_original_aggregated$year.month <- anytime(df_original_aggregated$year.month)
+df_original_aggregated$year.month = as.Date(df_original_aggregated$year.month, format='%Y-%m-01')
+
+```
+
+
+```{r}
+df_original_aggregated
+```
+
+
+```{r}
+ggplot(df_original_aggregated, aes(year.month,y=cnt, fill=sentiment)) + geom_area()+labs( x="Year",y="Count", color="Region")+scale_fill_manual(values=c("#0b328f",
+                             "#e8607b",
+                             "#f47d51",
+                             "darkblue"))+
+  theme(
+    axis.title.y=element_blank(),
+    panel.background = element_rect(fill = NA, colour = "grey50"),
+    panel.grid.major    = element_line(colour = "lightgrey"),
+    legend.position = "bottom",
+    panel.grid.major.y = element_blank(),
+    axis.text=element_text(size=14),
+    axis.title=element_text(size=14),
+    legend.text=element_text(size=14))
+```
+```{r}
+ggsave("sentiment_distribution_area.pdf")
+```
+
+
+
+```{r}
+df_original_top50
+#cd <- melt(df_original_top50[,c('replys','retweets','likes','sentiment')],id.vars = 1)
+```
+
+```{r}
+
+df_original_top50 <-
+    pivot_longer(df_original_top50,
+                 c("Replys",
+                   "Likes",
+                   "Retweets"),
+                 names_to="engagement",
+                 values_to = "value")
+
+df_original_top50
+
+
+```
+
+```{r}
+ggplot(df_original_top50, aes(x=sentiment,y=value,fill=engagement))+geom_bar(stat="identity",position =position_dodge())+scale_fill_manual(values=c("#ff006e",
+                             "#8338ec",
+                             "#3a86ff"))+
+  theme(
+    axis.title.y=element_blank(),
+    panel.background = element_rect(fill = NA, colour = "grey50"),
+    panel.grid.major    = element_line(colour = "lightgrey"),
+    legend.position = "bottom",
+    panel.grid.major.y = element_blank(),
+    axis.text=element_text(size=18),
+    axis.title=element_text(size=18),
+    legend.text=element_text(size=18))
+
+#ggsave("sentiment_top50.pdf")
+```
+
+
+```{r}
+
+before_after_replys <-
+    pivot_longer(before_after_replys,
+                 c("Negative",
+                   "Neutral",
+                   "Positive"),
+                 names_to="Sentiment",
+                 values_to = "value")
+
+
+
+```
+
+```{r}
+
+before_after_replys$value <- before_after_replys$value*100
+
+before_after_replys$value <-round(before_after_replys$value,digits = 2)
+before_after_replys
+
+```
+
+
+```{r}
+ggplot(before_after_replys, aes(x=Pre_Post,y=value,fill=Sentiment,label = value,xlab="pre / post"))+geom_bar(stat="identity",position = "stack")+geom_text(size = 4.5, color = "white", position = position_stack(vjust = 0.5))+scale_fill_manual(values=c("#0b328f",
+                             "#e8607b",
+                             "#f47d51",
+                             "darkblue"))+scale_y_continuous(labels=scales::percent_format(scale = 1))+
+  theme(
+    axis.title.y=element_blank(),
+    panel.background = element_rect(fill = NA, colour = "grey50"),
+    panel.grid.major    = element_line(colour = "lightgrey"),
+    legend.position = "bottom",
+    panel.grid.major.y = element_blank(),
+    axis.text=element_text(size=18),
+    axis.title=element_text(size=18),
+    axis.ticks.x = element_line(size = 0.7),
+    axis.ticks.y = element_line(size = 0.7),
+    axis.ticks.length = unit(.25, "cm"),
+    legend.text=element_text(size=18))
+#ggsave("replys_before_after.pdf")
+```
+
+```{r}
+df_original_crosstab <-
+    pivot_longer(df_original_crosstab,
+                 c("Negative",
+                   "Neutral",
+                   "Positive"),
+                 names_to="Sentiment",
+                 values_to = "value")
+
+```
+
+```{r}
+df_original_crosstab$value <- df_original_crosstab$value*100
+
+df_original_crosstab$value <-round(df_original_crosstab$value,digits = 2)
+df_original_crosstab
+
+```
+
+```{r}
+df_original_crosstab <- transform(df_original_crosstab, year = as.character(year))
+df_original_crosstab$year <- anytime(df_original_crosstab$year)
+
+df_original_crosstab$year = as.Date(df_original_crosstab$year, format='%Y-%m-%d+%d')+1
+df_original_crosstab
+
+```
+
+```{r}
+ggplot(df_original_crosstab, aes(x=year,y=value,fill=Sentiment,label = value))+geom_bar(stat="identity",position = "stack")+geom_text(size = 4.5,color= "white", position = position_stack(vjust = 0.5))+scale_fill_manual(values=c("#0b328f",
+                             "#e8607b",
+                             "#f47d51",
+                             "darkblue"))+scale_y_continuous(labels=scales::percent_format(scale = 1))+
+  theme(
+    axis.title.y=element_blank(),
+    panel.background = element_rect(fill = NA, colour = "grey50"),
+    panel.grid.major    = element_line(colour = "lightgrey"),
+    legend.position = "bottom",
+    panel.grid.major.y = element_blank(),
+    axis.text=element_text(size=18),
+    axis.title=element_text(size=18),
+    axis.ticks.x = element_line(size = 0.7),
+    axis.ticks.y = element_line(size = 0.7),
+    axis.ticks.length = unit(.25, "cm"),
+    legend.text=element_text(size=18))
+#ggsave("sentiment_original_conversations.pdf")
+```
+
+```{r}
+df_conversations_avg <-
+    pivot_longer(df_conversations_avg,
+                 c("Replys",
+                   "Likes",
+                   "Retweets"),
+                 names_to="engagement",
+                 values_to = "value")
+
+df_conversations_avg
+```
+
+```{r}
+ggplot(df_conversations_avg, aes(x=Sentiment,y=value,fill=engagement))+geom_bar(stat="identity",position =position_dodge())+scale_fill_manual(values=c("#ff006e",
+                             "#8338ec",
+                             "#3a86ff"))+
+  theme(
+    axis.title.y=element_blank(),
+    panel.background = element_rect(fill = NA, colour = "grey50"),
+    panel.grid.major    = element_line(colour = "lightgrey"),
+    legend.position = "bottom",
+    panel.grid.major.y = element_blank(),
+    axis.text=element_text(size=18),
+    axis.title=element_text(size=18),
+    axis.ticks.x = element_line(size = 0.7),
+    axis.ticks.y = element_line(size = 0.7),
+    axis.ticks.length = unit(.25, "cm"),
+    legend.text=element_text(size=18))
+#ggsave("sentiment_engagement.pdf")
+```
+
+```{r}
+df_conversations_avg_norm <-
+    pivot_longer(df_conversations_avg_norm,
+                 c("Replys",
+                   "Likes",
+                   "Retweets",
+                   "Quotes"),
+                 names_to="engagement",
+                 values_to = "value")
+
+df_conversations_avg_norm
+
+```
+
+```{r}
+ggplot(df_conversations_avg_norm, aes(x=Sentiment,y=value,fill=engagement))+geom_bar(stat="identity",position =position_dodge())+scale_fill_manual(values=c("#ff006e",
+                             "#8338ec",
+                             "#3a86ff","darkblue"))+
+  theme(
+    axis.title.y=element_blank(),
+    panel.background = element_rect(fill = NA, colour = "grey50"),
+    panel.grid.major    = element_line(colour = "lightgrey"),
+    legend.position = "bottom",
+    panel.grid.major.y = element_blank(),
+    axis.text=element_text(size=18),
+    axis.title=element_text(size=18),
+    axis.ticks.x = element_line(size = 0.7),
+    axis.ticks.y = element_line(size = 0.7),
+    axis.ticks.length = unit(.25, "cm"),
+    legend.text=element_text(size=18))
+```

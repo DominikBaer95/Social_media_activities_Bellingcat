@@ -1,0 +1,239 @@
+```{r}
+library(ggplot2)
+library(reshape2)
+library(cowplot)
+library(scales)
+library(lubridate)
+```
+
+```{r}
+
+df <- read.csv("../../DataSources/Dataset_Graphs/RQ2_Content_Engagement/first_graphs.csv", header=TRUE)
+
+```
+
+```{r}
+level_order <- c('Tools and Training','Other Promotion','Self-Promotion', 'Bellingcat Ops', 'Crowdsourcing','Research Publication') 
+
+plot_difference_log<-ggplot(df, aes(x=factor(Final.Type, level = level_order), y=log_engagement_per_post_per_follower,fill=Final.Type)) + 
+  geom_boxplot()+
+  theme(axis.text.x = element_text(angle = 50, vjust = 1, hjust=1),
+        axis.title.x=element_blank(),
+        panel.background = element_rect(fill = NA, colour = "grey50"),
+        panel.grid.major    = element_line(colour = "lightgrey"),
+        axis.text=element_text(size=14,color="black"),
+        axis.title=element_text(size=14,color="black"),
+        plot.subtitle=element_text(size=14,hjust=0.5,color="black"),
+        axis.title.y = element_text(margin = margin(t = 0, r = 5, b = 0, l = 0)))+
+  guides(fill="none")+
+  labs(x = "", y = "Engagement")+
+  scale_fill_manual("Type",values = c('Self-Promotion' = "#0091a8", 'Research Publication'="#0091a8", 'Other Promotion'="#0091a8", 'Tools and Training'="#0091a8", 'Crowdsourcing'="#0091a8", 'Bellingcat Ops'="#0091a8"))+
+  labs(subtitle = "(a)")
+
+plot_difference_log
+# ggsave("plot_difference_engagement_category.pdf")
+```
+
+```{r}
+level_order <- c(  'Tools and Training','Other Promotion','Self-Promotion', 'Bellingcat Ops', 'Crowdsourcing','Research Publication')
+
+legend_order <- c( 'No Media', 'Media') 
+plot_difference_log_media<-ggplot(df, aes(x=factor(Final.Type, level = level_order), y=log_engagement_per_post_per_follower,fill=factor(media_Binary,legend_order))) + 
+  geom_boxplot()+
+   theme(
+     axis.text.x = element_text(angle = 50, vjust = 1, hjust=1),
+     axis.title.x=element_blank(),
+     panel.background = element_rect(fill = NA, colour = "grey50"),
+     panel.grid.major    = element_line(colour = "lightgrey"),
+     axis.text=element_text(size=14,color="black"),
+    axis.title=element_text(size=16,color="black"),
+    plot.subtitle=element_text(size=14,hjust=0.5,color="black"),
+    legend.text=element_text(size=14),
+    legend.title=element_blank())+
+     labs(x = "", y = " ")+
+  scale_fill_manual("Type",values = c("No Media" = "#ff848f", "Media" = "#46a1de"))+
+  labs(subtitle = "(b)")
+plot_difference_log_media
+ 
+```
+
+```{r}
+
+p<-plot_grid(plot_difference_log, plot_difference_log_media,ncol=2,rel_widths = c(0.44, 0.56))
+p
+#save_plot("plot_differences_log_engagement.pdf", p,base_width =31, base_height = 11, units = "cm" )
+```
+
+```{r}
+
+df_rates <- read.csv("../../DataSources/Dataset_Graphs/RQ2_Content_Engagement/rates.csv", header=TRUE, sep= ",")
+
+df_rates <- df_rates[c("X","Final.Type","rate_urls","rate_media","rate_hashtags","amount_conversation","amount_tweet")]
+```
+
+```{r}
+
+df_rates_melt<-melt(df_rates, id=c("X","Final.Type","rate_urls","rate_media","rate_hashtags"))
+```
+
+
+```{r}
+
+df_total_media <- read.csv("../../DataSources/Dataset_Graphs/RQ2_Content_Engagement/total_media.csv", header=TRUE, sep= ",")
+```
+
+```{r}
+df_total_media_melt<-melt(df_total_media, id=c("X","Final.Type","amount_tweet","amount_conversation"))
+```
+
+```{r}
+level_order <- c('Tools and Training','Other Promotion','Self-Promotion', 'Bellingcat Ops', 'Crowdsourcing','Research Publication')
+sapply(df_rates_melt, class)
+df_rates_melt$variable <- factor(df_rates_melt$variable, levels = c("amount_conversation","amount_tweet"))
+lim <- c(0,560)
+tweets_by_category<-ggplot(df_rates_melt, aes(x=factor(Final.Type, level = level_order))) +
+  coord_flip()+
+  theme(
+    axis.title.y=element_blank(),
+    panel.background = element_rect(fill = NA, colour = "grey50"),
+    panel.grid.major    = element_line(colour = "lightgrey"),
+    legend.position = "bottom",
+    panel.grid.major.y = element_blank(),
+    axis.text=element_text(size=20,colour =   "black"),
+    axis.title=element_text(size=20,colour =   "black"),
+    legend.text=element_text(size=20,colour =   "black"),
+    legend.title=element_blank(),
+    plot.subtitle=element_text(size=20,hjust=0.5))+
+  scale_x_continuous(expand = c(0, 0))+
+  scale_y_continuous(expand = c(0, 0),limits=lim)+
+  geom_bar(aes(y=value,fill=variable),stat="identity", position="dodge")+
+  scale_fill_manual(values = c("amount_tweet" = "#0b328f", "amount_conversation" = "#e8607b"),labels = c("Individual Tweets","Threads"))+
+  labs( y = "Amount")+
+  scale_x_discrete(expand = c(0, 0))
+
+tweets_by_category
+save_plot("tweets_by_category.pdf", tweets_by_category,base_height = 13,base_width = 18, units = "cm")
+```
+
+```{r}
+
+level_order <- c('Tools and Training','Other Promotion','Self-Promotion', 'Bellingcat Ops', 'Crowdsourcing','Research Publication')
+df_total_media_melt$variable <- factor(df_total_media_melt$variable, levels = c("total_hashtags","total_media","total_urls"))
+lim <- c(0,430)
+total_media_category<-ggplot(df_total_media_melt, aes(x=factor(Final.Type, level = level_order))) +
+    theme(axis.title.y=element_blank(), 
+          panel.background = element_rect(fill = NA, colour =   "grey50"),
+          panel.grid.major = element_line(colour = "lightgrey"),
+          legend.position = "bottom", 
+          axis.text.y=element_blank(),
+          axis.ticks.y=element_blank(),
+          axis.text=element_text(size=24,colour =   "black"),
+          axis.title=element_text(size=24,colour =   "black"),
+          legend.text=element_text(size=24,colour =   "black"),
+          legend.title=element_blank(),
+          plot.subtitle=element_text(size=24,hjust=0.5)
+        )+
+    scale_x_continuous(expand = c(0, 0))+
+    scale_y_continuous(expand = c(0, 0),limits = lim)+
+    coord_flip()+
+    geom_bar(aes(y=value,fill=variable),stat="identity", position="dodge")+
+    scale_fill_manual("Attachment",values = c("total_urls" = "#ffbc40", "total_media" = "#0ea070","total_hashtags"="#9bb9d4"),labels = c("Urls","Media","Hashtags"))+
+    labs( y = "Amount")+
+    scale_x_discrete(expand = c(0, 0),breaks = NULL)
+
+total_media_category
+save_plot("total_media_category.pdf", total_media_category,base_height = 15,base_width = 14, units = "cm")
+```
+
+```{r}
+content <- ggplotGrob(tweets_by_category)
+attachments <- ggplotGrob(total_media_category)
+
+p<-plot_grid(content, attachments, ncol = 2,rel_widths  = c(0.6, 0.4))
+save_plot("Volume and media.pdf", p,base_width =34, base_height = 15, units = "cm" )
+```
+
+
+```{r}
+df_before_after <- read.csv("../../DataSources/Dataset_Graphs/RQ3_Content_Engagement/before_after.csv", header=TRUE, sep= ",")
+```
+
+```{r}
+level_order_2 <- c( 'Tools and Training','Other Promotion','Self-Promotion', 'Bellingcat Ops', 'Crowdsourcing','Research Publication')  
+
+legend_order <- c( 'before', 'after') 
+engagement_before_after<-ggplot(df_before_after, aes(x=factor(Final.Type, level = level_order_2), y=log_engagement_per_post_per_follower,fill=factor(time_frame,legend_order))) + 
+  
+  geom_boxplot()+
+   theme(
+     axis.text.x = element_text(angle = 45, vjust = 1, hjust=1),
+     axis.title.x=element_blank(), 
+     panel.background = element_rect(fill = NA, colour = "grey50"),
+     panel.grid.major    = element_line(colour = "lightgrey"),
+     legend.position = "bottom", 
+     axis.text=element_text(size=16),
+     axis.title=element_text(size=16),
+     legend.text=element_text(size=18),
+     legend.title=element_blank(),
+     plot.subtitle=element_text(size=18,hjust=0.5),
+      legend.key.size = unit(1, "cm")
+     )+
+  scale_fill_manual("Time Frame",values = c("before" = "#07ecc1", "after" = "#037e5e"),labels = c("Pre","Post"))+
+  labs(x = "", y = "Engagement",fill="Presence")
+engagement_before_after
+save_plot("engagement_before_after.pdf", engagement_before_after,base_height = 13,base_width = 22, units = "cm")
+
+```
+
+```{r}
+df_volume_before_after <- read.csv("../../DataSources/Dataset_Graphs/RQ3_Content_Engagement/df_bellingcat_volumen_after_war.csv", header=TRUE, sep= ",")
+```
+
+```{r}
+
+level_order <- c('Tools and Training','Other Promotion','Self-Promotion', 'Bellingcat Ops', 'Crowdsourcing','Research Publication')
+lim <- c(0, 99)
+#y = rep(c(5,12,14,19,47,108),2)
+#x = rep(c( 'Bellingcat Ops','Crowdsourcing', 'Tool Presentation','Support other content', 'Self-Promotion','Research Publication') , 2)
+
+df_volume_before_after$time_frame <- factor(df_volume_before_after$time_frame, levels = c("after","before"))
+
+volumen_publications_before_after<-ggplot(df_volume_before_after, aes(x=factor(Final.Type, level = level_order)))+
+  theme(axis.title.y=element_blank(), 
+          panel.background = element_rect(fill = NA, colour =   "grey50"),
+          panel.grid.minor = element_blank(),
+          panel.grid.major = element_blank(), 
+          legend.position = c(0.73, 0.2),
+          legend.title =element_blank(),
+          axis.text=element_text(size=22,colour =   "black"),
+          axis.title=element_text(size=22,colour =   "black"),
+          legend.text=element_text(size=22,colour =   "black"),
+          plot.subtitle=element_text(size=22,hjust=0.36),
+          plot.margin = margin(0.2,0.2,1,0.2, "cm")
+        )+
+  geom_bar(aes(y=count,fill=time_frame),stat="identity", position="dodge")+
+  labs( y = "Number of threads")+
+  scale_y_continuous(expand = c(0, 0),limits = lim)+
+  scale_fill_manual("Time Frame",values = c("before" = "#07ecc1", "after" = "#037e5e"),labels = c("Before","After"))+
+
+  coord_flip()
+
+volumen_publications_before_after
+save_plot("volumen_publications_before_after.pdf", volumen_publications_before_after,base_height = 12,base_width = 20, units = "cm")
+
+```
+
+```{r}
+legend <- get_legend(
+  volumen_publications_before_after+
+    theme(legend.position = "bottom")+
+    guides(color = guide_legend(nrow = 1)) 
+)
+
+legend
+prow<-plot_grid(volumen_publications_before_after, engagement_before_after, nrow = 2, rel_heights = c(0.5,0.5))
+prow
+p<-plot_grid(prow, legend,nrow=2,rel_heights = c(0.95,0.05))
+p
+save_plot("plot_before_after.pdf", p,base_width = 20, base_height = 25, units = "cm")
+```

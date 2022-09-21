@@ -1,0 +1,184 @@
+---
+title: "RQ2_All_Threads"
+author: "Fausto Calderon"
+date: "14/9/2022"
+output: html_document
+---
+```{r}
+
+library(ggplot2)
+library(tidyverse)
+library(broom)
+library(lubridate)
+
+```
+
+```{r}
+
+df <- read.csv("../../DataSources/Dataset_Graphs/RQ2_Content_Engagement/CCDF_Sentiment.csv", header=TRUE)
+path_figures<-"../../DataSources/Dataset_Graphs/CCDF_"
+```
+
+
+```{r}
+theme_set(
+  theme_bw() +
+    theme(legend.position = c(0.73, 0.9),
+          legend.title = element_blank(), legend.direction="vertical",
+          legend.text = element_text(colour="black", size=30), 
+          legend.background=element_rect(fill="transparent", colour=NA),
+          legend.key = element_rect(fill = "transparent", colour = "transparent"),
+          legend.key.width = unit(1.25, "cm"), legend.key.height = unit(1.25, "cm")
+    ) + 
+    theme(axis.text.x=element_text(colour = "black", size=33, vjust=-0.5), 
+          axis.text.y=element_text(colour = "black", size=33, vjust=0.5),
+          axis.title.x=element_blank(), 
+          axis.title.y=element_text(size=34, vjust=1.5)
+    ) +
+    theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+)
+
+```
+
+# CCDF
+```{r}
+ccdf <- function(x) {
+  ecdf_fun <- ecdf(x)
+  df <- data.frame(x = unique(x), y = 1 - sapply(unique(x), ecdf_fun))
+  return(df)
+}
+```
+
+
+```{r}
+ccdf_plots <- function(type_v) {
+current_type<-type_v[[1]]
+print(current_type)
+print(typeof(current_type))
+
+features_all_unalterd<- df[c(current_type,"engagement_per_post_per_follower")]
+colnames(features_all_unalterd) <- c("attachmentIndicator","engagement")
+
+features_all_unalterd$attachmentIndicator <- factor(features_all_unalterd$attachmentIndicator, levels = type_v)
+
+print(head(features_all_unalterd))
+df_plot <- features_all_unalterd %>% group_by(attachmentIndicator) %>% group_modify(~ ccdf(.x$engagement)) %>% arrange(x) %>% 
+  mutate(y = lag(y, default = 1)) %>% ungroup()# %>% mutate(x = x + 1)
+
+plot_stat <- ks.test(features_all_unalterd %>% dplyr::filter(attachmentIndicator == current_type) %>% pull(engagement), 
+                     features_all_unalterd %>% dplyr::filter(attachmentIndicator != current_type) %>% pull(engagement)) %>% tidy() %>% mutate(label = ifelse(p.value < 0.01, paste0("KS-test: D=", round(statistic, 3), ", p<0.01"), paste0("KS-test: D=", round(statistic, 3), ", p=", format(round(p.value, digits = 2), nsmall = 2))))
+
+plot_ccdf <- ggplot(df_plot, aes(x = x, y = y, group=attachmentIndicator)) + geom_line(aes(group = attachmentIndicator, color=attachmentIndicator, linetype = attachmentIndicator), size = 1.5) +
+  scale_colour_manual(values=c("#003893", "#CE1126", "#56B4E9"), labels= type) +
+  scale_linetype_discrete(labels= type) + 
+  scale_x_continuous(
+  ) +
+  scale_y_continuous(
+    labels = c("0.001", "0.01", "0.1", "1", "10", "100"),
+    trans = "log10",
+    breaks = c(0.00001, 0.0001, 0.001, 0.01, 0.1, 1),
+    limits = c(0.00001,1),
+    expand = c(0, 0)
+  )  +
+  annotate(geom = "text", x = 0.021, y = 0.000025, label = plot_stat$label, parse = F, size = 11) +
+  labs(y = "CCDF (%)", x="") + 
+  theme(plot.margin=grid::unit(c(5,7,7,5), "mm"),
+        axis.title.x=element_blank())
+plot_ccdf
+
+ggsave(plot_ccdf, file = str_c(path_figures, paste(current_type,".pdf")), width = 20, height = 15, units = "cm")
+}
+```
+
+```{r}
+image_v<-c("Image","No Image")
+video_v<-c("Video","No Video")
+url_v<-c("URL","No URL")
+hashtag_v<-c("Hashtags","No Hashtags")
+mentions_v<-c("Mentions", "No Mentions")
+
+graph_types <- list(image_v,video_v,url_v,hashtag_v,mentions_v)
+
+for (type in graph_types) {
+  print(type)
+  ccdf_plots(type)
+}
+```
+
+Sentiment
+
+```{r}
+
+features_all_unalterd<- df[c("sentiment","engagement_per_post_per_follower")]
+colnames(features_all_unalterd) <- c("attachmentIndicator","engagement")
+
+features_all_unalterd$attachmentIndicator <- factor(features_all_unalterd$attachmentIndicator, levels = c("Negative","Neutral","Positive"))
+
+print(head(features_all_unalterd))
+df_plot <- features_all_unalterd %>% group_by(attachmentIndicator) %>% group_modify(~ ccdf(.x$engagement)) %>% arrange(x) %>% 
+  mutate(y = lag(y, default = 1)) %>% ungroup()# %>% mutate(x = x + 1)
+
+#plot_stat <- ks.test(features_all_unalterd %>% dplyr::filter(attachmentIndicator == current_type) %>% pull(engagement), 
+#                     features_all_unalterd %>% dplyr::filter(attachmentIndicator != current_type) %>% pull(engagement)) %>% tidy() %>% mutate(label = ifelse(p.value < 0.01, paste0("KS-test: D=", round(statistic, 3), ", p<0.01"), paste0("KS-test: D=", round(statistic, 3), ", p<", format(round(p.value, digits = 2), nsmall = 2))))
+
+plot_ccdf <- ggplot(df_plot, aes(x = x, y = y, group=attachmentIndicator)) + geom_line(aes(group = attachmentIndicator, color=attachmentIndicator, linetype = attachmentIndicator), size = 1.5) +
+  scale_colour_manual(values=c("#003893", "#CE1126", "#56B4E9"), labels= c("Negative","Neutral","Positive")) +
+  scale_linetype_discrete(labels= c("Negative","Neutral","Positive")) + 
+  scale_x_continuous(
+  ) +
+  scale_y_continuous(
+    labels = c("0.001", "0.01", "0.1", "1", "10", "100"),
+    trans = "log10",
+    breaks = c(0.00001, 0.0001, 0.001, 0.01, 0.1, 1),
+    limits = c(0.00001,1),
+    expand = c(0, 0)
+  )  +
+  #annotate(geom = "text", x = 0.02, y = 0.0000175, label = plot_stat$label, parse = F, size = 6) +
+  labs(y = "CCDF (%)", x = "Engagement") + 
+  theme(plot.margin=grid::unit(c(5,7,2,5), "mm"))
+plot_ccdf
+ggsave(plot_ccdf, file = str_c(path_figures, "sentiment_ccdf.pdf"), width = 20, height = 15, units = "cm")
+
+```
+
+Impact of war
+
+```{r}
+
+path_figures_RQ3<-"../../DataSources/Dataset_Graphs/CCDF"
+
+df$date <- ymd(df$date)
+print(head(df))
+features_all_unalterd<- df[df$date>= as.Date("2021-11-16"),]
+features_all_unalterd<- features_all_unalterd[c("time_frame","engagement_per_post_per_follower")]
+colnames(features_all_unalterd) <- c("attachmentIndicator","engagement")
+
+features_all_unalterd$attachmentIndicator <- factor(features_all_unalterd$attachmentIndicator, levels = c("before","after"))
+
+print(head(features_all_unalterd))
+df_plot <- features_all_unalterd %>% group_by(attachmentIndicator) %>% group_modify(~ ccdf(.x$engagement)) %>% arrange(x) %>% 
+  mutate(y = lag(y, default = 1)) %>% ungroup()# %>% mutate(x = x + 1)
+
+plot_stat <- ks.test(features_all_unalterd %>% dplyr::filter(attachmentIndicator == "before") %>% pull(engagement), 
+                    features_all_unalterd %>% dplyr::filter(attachmentIndicator == "after") %>% pull(engagement)) %>% tidy() %>% mutate(label = ifelse(p.value < 0.01, paste0("KS-test: D=", round(statistic, 3), ", p<0.01"), paste0("KS-test: D=", round(statistic, 3), ", p<", format(round(p.value, digits = 2), nsmall = 2))))
+
+plot_ccdf <- ggplot(df_plot, aes(x = x, y = y, group=attachmentIndicator)) + geom_line(aes(group = attachmentIndicator, color=attachmentIndicator, linetype = attachmentIndicator), size = 1.5) +
+  scale_colour_manual(values=c("#07ecc1", "#037e5e"), labels= c("Before","After")) +
+  scale_linetype_discrete(labels= c("Before","After")) + 
+  scale_x_continuous(
+  ) +
+  scale_y_continuous(
+    labels = c("0.001", "0.01", "0.1", "1", "10", "100"),
+    trans = "log10",
+    breaks = c(0.00001, 0.0001, 0.001, 0.01, 0.1, 1),
+    limits = c(0.00001,1),
+    expand = c(0, 0)
+  )  +
+  annotate(geom = "text", x = 0.0075, y = 0.00003, label = plot_stat$label, parse = F, size = 12) +
+  labs(y = "CCDF (%)") + 
+  theme(plot.margin=grid::unit(c(5,7,5,5), "mm"),
+        axis.title.x=element_blank())
+plot_ccdf
+ggsave(plot_ccdf, file = str_c(path_figures_RQ3, "=EngagementBeforeAfter.pdf"), width = 20, height = 15, units = "cm")
+
+```

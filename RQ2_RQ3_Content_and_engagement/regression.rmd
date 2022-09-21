@@ -1,0 +1,22 @@
+```{r}
+library(ISLR)
+library(caret)
+set.seed(2) # this is added so that the random number generator is alwas giving the same split, which makes it easier to compare results for now.
+df <- read.csv("../../DataSources/Dataset_Graphs/RQ2_Content_Engagement/engagement_with_sentiment.csv", header=TRUE)
+df$X <- NULL
+df$quantiles  <- as.factor(df$quantiles)
+df$urls_Binary  <- as.factor(df$urls_Binary)
+df$media_photo_Binary  <- as.factor(df$media_photo_Binary)
+df$media_videos_Binary  <- as.factor(df$media_videos_Binary)
+df$hashtags_Binary  <- as.factor(df$hashtags_Binary)
+inTrain <- createDataPartition(df$quantiles, p = 0.8, list = FALSE)
+
+training_set <- df[inTrain, ]
+test_set <- df[-inTrain, ]
+training_set
+```
+
+```{r}
+model <- glm(quantiles ~.,family=binomial(link='logit'),data=training_set)
+summary(model)
+```

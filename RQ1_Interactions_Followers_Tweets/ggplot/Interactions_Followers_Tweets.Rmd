@@ -1,0 +1,140 @@
+```{r}
+
+library(ggplot2)
+library(reshape2)
+library(cowplot)
+library(scales)
+library(lubridate)
+
+```
+
+
+```{r}
+
+df_trends <- read.csv("../../DataSources/Dataset_Graphs/RQ1_Followers_Interactions_Tweets/Followers_Interactions.csv", header=TRUE, sep= ",")
+
+```
+
+```{r}
+
+print(df_trends)
+
+```
+
+```{r}
+
+df_trends$date <- ymd(df_trends$date)
+
+```
+
+```{r}
+
+interactions<-ggplot(df_trends, aes(x=date)) +
+    theme( 
+          panel.background = element_rect(fill = NA, colour =   "grey50"),
+          panel.grid.major = element_line(colour = "lightgrey"),
+          legend.position = "bottom", 
+          legend.title = element_blank(),
+          axis.ticks.y=element_blank(),
+          legend.text=element_text(size=16,color="black"),
+          axis.title=element_text(size=16,color="black"),
+          axis.text=element_text(size=16,color="black"),
+         axis.title.x=element_blank(), 
+          axis.text.x=element_blank()
+        )+
+ 
+  geom_line( aes(y=all_interactions,color="Engagement"),size = 0.9) +
+  labs( y = "Number of interactions")+
+  guides(color="none")+
+  geom_vline(xintercept=as.numeric(as.Date(c("2022-02-24","2021-01-06","2018-11-16"))), linetype="dashed", size = 0.6)+
+  scale_color_manual( values = c("Engagement" = "#e8607b"))+
+  scale_y_continuous(labels = unit_format(unit = "K", scale = 1e-3))
+
+
+interactions
+save_plot("interactions.pdf", interactions,base_height = 7,base_width = 20, units = "cm")
+
+```
+
+```{r}
+
+followers<-ggplot(df_trends, aes(x=date)) +
+    theme( 
+          panel.background = element_rect(fill = NA, colour =   "grey50"),
+          panel.grid.major = element_line(colour = "lightgrey"),
+          legend.position = "bottom", 
+          legend.title = element_blank(),
+          axis.ticks.y=element_blank(),
+          legend.text=element_text(size=16,color="black"),
+          axis.title=element_text(size=16,color="black"),
+          axis.text=element_text(size=16,color="black"),
+         axis.title.x=element_blank(), 
+          axis.text.x=element_blank())+
+  guides(color="none")+
+  geom_line( aes(y=followers,color="Followers"),size = 0.9) +
+  labs( y = "Number of followers")+
+  geom_vline(xintercept=as.numeric(as.Date(c("2022-02-24","2021-01-06","2018-11-16"))), linetype="dashed", size = 0.6)+
+  annotate("text", x = as.Date(c("2021-8-15")), y = 700000, label = "Invasion",size=5)+
+  annotate("text", x = as.Date(c("2020-1-1")), y = 700000, label = "U.S. Capitol Riots",size=5)+
+  annotate("text", x = as.Date(c("2018-1-15")), y = 700000, label = "Documentary",size=5)+
+  scale_color_manual( values = c("Followers" = "#0b328f"))+
+  scale_y_continuous(labels = unit_format(unit = "K", scale = 1e-3))
+
+
+followers
+
+save_plot("followers.pdf", followers,base_height = 7,base_width = 20, units = "cm")
+
+```
+
+
+```{r}
+
+df_trends_relative <- read.csv("../../DataSources/Dataset_Graphs/RQ1_Followers_Interactions_Tweets/Relative_Tweets.csv", header=TRUE, sep= ",")
+
+```
+
+```{r}
+
+df_trends_relative$date <- ymd(df_trends_relative$date)
+
+```
+
+```{r}
+
+trends_relative<-ggplot(df_trends_relative, aes(x=date)) +
+    theme( 
+          panel.background = element_rect(fill = NA, colour =   "grey50"),
+          panel.grid.major = element_line(colour = "lightgrey"),
+          axis.ticks.y=element_blank(),
+          legend.text=element_text(size=16,color="black"),
+          axis.title=element_text(size=16,color="black"),
+          axis.text=element_text(size=16,color="black"),
+          axis.text.x=element_text(size=18),
+          legend.title=element_blank(),
+         axis.title.x=element_blank(), 
+         legend.position='bottom', 
+        legend.justification='center',
+         axis.title.y = element_text(margin = margin(t = 0, r = 17, b = 0, l = 0))
+        )+
+  geom_line( aes(y=relative,color=type_of_tweet),size = 0.7) +
+  geom_vline(xintercept=as.numeric(as.Date(c("2022-02-24","2021-01-06","2018-11-16"))), linetype="dashed", size = 0.6)+
+  scale_y_continuous(labels = scales::percent)+
+  labs( y = "Percentage of posts")+
+  scale_color_manual("Tweet Type",values = c("Conversation" = "#ffbc40", "replied_to" = "#0ea070","retweeted"="#58508d"),labels = c("Threads","Replies","Retweets"))
+
+legend <- get_legend(
+  trends_relative+
+    theme(legend.position = "bottom")+
+    guides(color = guide_legend(nrow = 1)) 
+)
+
+
+trends_relative
+
+save_plot("trends_relative.pdf", trends_relative,base_height = 9.5,base_width = 20, units = "cm")
+p<-plot_grid(legend,nrow=1)
+p
+save_plot("trends_relative_legend.pdf", p,base_height = 9, units = "cm")
+
+```

@@ -1,0 +1,79 @@
+---
+title: "Engagement_Sentiment"
+author: "Fausto Calderon"
+date: "15/9/2022"
+output: html_document
+---
+
+```{r}
+
+library(ggplot2)
+library(reshape2)
+library(scales)
+library(tidyverse)
+library(lubridate)
+
+```
+
+
+```{r}
+
+df_median_sentiment <- read.csv("../../DataSources/Dataset_Graphs/RQ2_Content_Engagement/total_sentiment.csv", header=TRUE)
+
+```
+
+
+```{r}
+engagement_sentiment<-ggplot(df_median_sentiment, aes(x=sentiment,y=engagement_per_post_per_follower,fill=sentiment))+geom_bar(stat="identity",position =position_dodge())+
+  scale_fill_manual(values=c("navyblue",
+                             "grey"
+                             ,"#AA4A44"))+
+  #scale_y_continuous(
+    #  breaks =c(0, 250000,500000,750000,1000000),
+    #  labels = c(0, "250K", "500K", "750K", "1Mio"))+
+  labs( y = "Engagement")+
+  theme(
+    panel.background = element_rect(fill = NA, colour = "grey50"),
+    panel.grid.major    = element_blank(),
+    legend.position = "none",
+    panel.grid.major.y = element_blank(),
+    legend.text=element_text(size=22,color="black"),
+    axis.title.y=element_text(size=22,color="black"),
+    axis.title.x=element_blank(),
+    axis.text=element_text(size=22,color="black"))
+engagement_sentiment
+ggsave(engagement_sentiment, file = str_c(path_figures, "sentiment_engagement.pdf"), width = 20, height = 15, units = "cm")
+```
+
+```{r}
+
+df_sentiment_year <- read.csv("../../DataSources/Dataset_Graphs/RQ1_Sentiment/Time_Sentiment.csv", header=TRUE)
+
+df_sentiment_year$date <- ymd(df_sentiment_year$date)
+
+```
+
+
+```{r}
+
+path_figures_RQ1<-"../../DataSources/Dataset_Graphs/RQ1_Sentiment/RQ1_Sentiment_"
+
+time_sentiment<-ggplot(df_sentiment_year, aes(x=date,y=text,fill=sentiment,label=relative))+
+  geom_bar(stat="identity",position ="fill")+
+  geom_text(aes(label = paste0(round(relative*100,digits = 0), "%")),size = 6,color= "white", position = position_fill(vjust =0.5))+
+  scale_fill_manual(values=c("navyblue","grey","#AA4A44"))+
+  scale_y_continuous(labels=scales::percent_format(scale = 100))+
+  theme(
+    panel.background = element_rect(fill = NA, colour = "grey50"),
+    panel.grid.major    = element_blank(),
+    legend.position = "bottom",
+    legend.title = element_blank(),
+    panel.grid.major.y = element_blank(),
+    legend.text=element_text(size=22,color="black"),
+    axis.title.y=element_blank(),
+    axis.title.x=element_blank(),
+    axis.text=element_text(size=22,color="black"))
+time_sentiment
+ggsave(time_sentiment, file = str_c(path_figures_RQ1, "Time_Sentiment.pdf"), width = 20, height = 15, units = "cm")
+
+```

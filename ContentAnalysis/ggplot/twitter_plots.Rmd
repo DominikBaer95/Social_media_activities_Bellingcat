@@ -1,0 +1,105 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+
+library(ggplot2)
+library(tidyverse)
+
+```
+
+```{r}
+
+getwd()
+
+```
+
+
+```{r}
+
+dataset <- read.csv("most_common_hashtags.csv")
+
+```
+
+```{r}
+
+ggplot(data= dataset, aes(y=reorder(hashtag, count), x=count, label=count)) +
+  geom_bar(stat = "identity", fill='#41206b') +
+  geom_text(nudge_x = 10) +
+  ylab('') +
+  xlab('') +
+  theme_bw() +
+  theme(
+    axis.title.y=element_blank(),
+    panel.background = element_rect(fill = NA, colour = "grey50"),
+    panel.grid.major    = element_line(colour = "lightgrey"),
+    legend.position = "bottom",
+    panel.grid.major.y = element_blank(),
+    axis.text=element_text(size=14),
+    axis.title=element_text(size=14),
+    legend.text=element_text(size=14))
+  #theme(panel.grid.major.y = element_blank(), panel.grid.minor.y = element_blank(), text = element_text(size=15))
+# no grid in x-axes
+
+ggsave("hashtags_barplot.pdf")
+
+```
+
+```{r}
+
+mentions <- read.csv("most_common_mentions.csv")
+
+```
+
+```{r}
+
+ggplot(data= mentions, aes(y=reorder(hashtag, count), x=count, label=count)) +
+  geom_bar(stat = "identity", fill = "#41206b") +
+  geom_text(nudge_x = 50) +
+  ylab('') +
+  xlab('') +
+  theme(
+    axis.title.y=element_blank(),
+    panel.background = element_rect(fill = NA, colour = "grey50"),
+    panel.grid.major    = element_line(colour = "lightgrey"),
+    legend.position = "bottom",
+    panel.grid.major.y = element_blank(),
+    axis.text=element_text(size=14),
+    axis.title=element_text(size=14),
+    legend.text=element_text(size=14))
+
+ggsave('mentions_barplot.pdf')
+
+```
+
+```{r}
+
+df <- data.frame('attachments' = c("URL", "Image", "Video"),
+                 'count' = c(7345, 1737, 313))
+
+```
+
+```{r}
+
+ggplot(data= df, aes(y=reorder(attachments, count), x=count, label=count, fill=attachments)) +
+  geom_bar(stat = "identity", fill = c('#56ccac', '#e01983', '#41206b')) +
+  geom_text(nudge_x = 250) +
+  xlab('') +
+  ylab('') +
+  theme_bw() +
+  theme(
+    axis.title.y=element_blank(),
+    panel.background = element_rect(fill = NA, colour = "grey50"),
+    panel.grid.major    = element_line(colour = "lightgrey"),
+    legend.position = "bottom",
+    panel.grid.major.y = element_blank(),
+    axis.text=element_text(size=14),
+    axis.title=element_text(size=14),
+    legend.text=element_text(size=14))
+
+ggsave('media_types_barplot.pdf')
+
+```
+
