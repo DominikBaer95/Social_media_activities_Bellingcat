@@ -13,12 +13,13 @@ library(scales)
 library(tidyverse)
 library(lubridate)
 
+
 ```
 
 
 ```{r}
 
-df_median_sentiment <- read.csv("../../DataSources/Dataset_Graphs/RQ2_Content_Engagement/total_sentiment.csv", header=TRUE)
+df_median_sentiment <- read.csv("../../../DataSources/Dataset_Graphs/RQ2_Content_Engagement/total_sentiment.csv", header=TRUE)
 
 ```
 
@@ -47,7 +48,7 @@ ggsave(engagement_sentiment, file = str_c(path_figures, "sentiment_engagement.pd
 
 ```{r}
 
-df_sentiment_year <- read.csv("../../DataSources/Dataset_Graphs/RQ1_Sentiment/Time_Sentiment.csv", header=TRUE)
+df_sentiment_year <- read.csv("../../../DataSources/Dataset_Graphs/RQ1_Sentiment/Time_Sentiment.csv", header=TRUE)
 
 df_sentiment_year$date <- ymd(df_sentiment_year$date)
 
@@ -55,6 +56,7 @@ df_sentiment_year$date <- ymd(df_sentiment_year$date)
 
 
 ```{r}
+
 
 path_figures_RQ1<-"../../DataSources/Dataset_Graphs/RQ1_Sentiment/RQ1_Sentiment_"
 
@@ -75,5 +77,60 @@ time_sentiment<-ggplot(df_sentiment_year, aes(x=date,y=text,fill=sentiment,label
     axis.text=element_text(size=22,color="black"))
 time_sentiment
 ggsave(time_sentiment, file = str_c(path_figures_RQ1, "Time_Sentiment.pdf"), width = 20, height = 15, units = "cm")
+
+```
+
+```{r}
+
+before_after_replys <- read.csv("../../../DataSources/Dataset_Graphs/RQ3_SentimentxReplys/before_after_replys.csv", header=TRUE)
+
+
+
+before_after_replys
+```
+
+```{r}
+before_after_replys <-
+    pivot_longer(before_after_replys,
+                 c("Negative",
+                   "Neutral",
+                   "Positive"),
+                 names_to="Sentiment",
+                 values_to = "value")
+```
+
+```{r}
+before_after_replys$value <- before_after_replys$value*100
+before_after_replys$value <-round(before_after_replys$value,digits = 2)
+before_after_replys
+```
+
+
+```{r}
+
+before_after_replys$Pre_Post <- factor(before_after_replys$Pre_Post, levels = c("Pre","Post"), labels = c("before", "after"))
+
+plot_before_after_replys<-ggplot(before_after_replys, aes(x=Pre_Post,y=value,fill=Sentiment,label = value))+geom_bar(stat="identity",position = "stack")+geom_text(aes(label = paste0(round(value,digits = 0), "%")),size = 7, color = "white", position = position_stack(vjust = 0.5))+
+  scale_fill_manual(values=c("navyblue","grey","#AA4A44"))+
+  scale_x_discrete(labels=c("Before","After"))+
+  scale_y_continuous(labels=scales::percent_format(scale = 1))+
+  theme(
+    panel.background = element_rect(fill = NA, colour = "grey50"),
+    panel.grid.major    = element_blank(),
+    legend.position = "bottom",
+    legend.title = element_blank(),
+    panel.grid.major.y = element_blank(),
+    legend.text=element_text(size=22,color="black"),
+    axis.title.y=element_blank(),
+    axis.title.x=element_blank(),
+    axis.text=element_text(size=22,color="black"))
+
+plot_before_after_replys
+
+```
+
+```{r}
+
+ggsave(plot_before_after_replys, file = str_c(path_figures_RQ3, "Reply_Sentiment.pdf"), width = 20, height = 15, units = "cm")
 
 ```
